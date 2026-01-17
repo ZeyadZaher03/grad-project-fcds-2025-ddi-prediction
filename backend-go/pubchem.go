@@ -12,9 +12,9 @@ import (
 type PubChemResp struct {
 	PropertyTable struct {
 		Properties []struct {
-			CanonicalSMILES   string `json:"CanonicalSMILES"`
-			IsomericSMILES    string `json:"IsomericSMILES"`
-			SMILES            string `json:"SMILES"`
+			CanonicalSMILES    string `json:"CanonicalSMILES"`
+			IsomericSMILES     string `json:"IsomericSMILES"`
+			SMILES             string `json:"SMILES"`
 			ConnectivitySMILES string `json:"ConnectivitySMILES"`
 		} `json:"Properties"`
 	} `json:"PropertyTable"`
