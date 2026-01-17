@@ -12,7 +12,10 @@ import (
 type PubChemResp struct {
 	PropertyTable struct {
 		Properties []struct {
-			CanonicalSMILES string `json:"CanonicalSMILES"`
+			CanonicalSMILES   string `json:"CanonicalSMILES"`
+			IsomericSMILES    string `json:"IsomericSMILES"`
+			SMILES            string `json:"SMILES"`
+			ConnectivitySMILES string `json:"ConnectivitySMILES"`
 		} `json:"Properties"`
 	} `json:"PropertyTable"`
 }
@@ -47,7 +50,17 @@ func ResolveSmilesPubChem(ctx context.Context, name string) (string, error) {
 		return "", fmt.Errorf("no smiles")
 	}
 
-	smiles := out.PropertyTable.Properties[0].CanonicalSMILES
+	prop := out.PropertyTable.Properties[0]
+	smiles := prop.CanonicalSMILES
+	if smiles == "" {
+		smiles = prop.SMILES
+	}
+	if smiles == "" {
+		smiles = prop.IsomericSMILES
+	}
+	if smiles == "" {
+		smiles = prop.ConnectivitySMILES
+	}
 	if smiles == "" {
 		return "", fmt.Errorf("empty smiles")
 	}

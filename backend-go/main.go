@@ -91,11 +91,13 @@ func main() {
 		// resolve to smiles
 		smilesA, err := ResolveSmilesPubChem(ctx, req.DrugAName)
 		if err != nil {
+			log.Printf("resolve drugA %q failed: %v", req.DrugAName, err)
 			http.Error(w, "drugA not found", 404)
 			return
 		}
 		smilesB, err := ResolveSmilesPubChem(ctx, req.DrugBName)
 		if err != nil {
+			log.Printf("resolve drugB %q failed: %v", req.DrugBName, err)
 			http.Error(w, "drugB not found", 404)
 			return
 		}
