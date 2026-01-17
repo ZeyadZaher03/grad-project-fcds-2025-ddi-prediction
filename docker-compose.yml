@@ -1,4 +1,4 @@
-version: "3.9"
+version: "3.3"
 
 services:
   inference:
@@ -17,7 +17,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      # removed start_period (not supported in 3.3)
 
   backend:
     build:
@@ -27,6 +27,6 @@ services:
       - "8080:8080"
     environment:
       - INFERENCE_URL=http://inference:8001
+      - APP_API_KEY=MySecureKey2025  # Use this for your security check
     depends_on:
-      inference:
-        condition: service_healthy
+      - inference # simplified (condition not supported in 3.3)
