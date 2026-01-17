@@ -16,9 +16,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const Stack = createNativeStackNavigator();
-import Constants from 'expo-constants';
-const DEV_API = `http://${Constants.expoConfig.hostUri.split(':')[0]}:8080`;
-const API_BASE = Constants.manifest2 ? DEV_API : 'https://your-production-endpoint';
+const API_BASE = 'http://134.209.165.83:8001/v1/ddi/predict'
 
 
 const probabilityLabel = (p) => {
