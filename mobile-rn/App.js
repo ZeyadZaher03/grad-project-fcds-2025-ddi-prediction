@@ -81,6 +81,7 @@ function SearchScreen({ navigation }) {
       }
       return [...prev, name];
     });
+    setQuery("")
   };
 
   const removeSelected = (name) => {
