@@ -16,7 +16,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const Stack = createNativeStackNavigator();
-const API_BASE = 'http://134.209.165.83:8001/v1/ddi/predict'
+const API_BASE = 'http://134.209.165.83:8080'
 
 
 const probabilityLabel = (p) => {
