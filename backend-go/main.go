@@ -24,16 +24,6 @@ type DDIResponse struct {
 	Model       string  `json:"model"`
 }
 
-func label(p float64) string {
-	if p >= 0.7 {
-		return "ddi_likely"
-	}
-	if p >= 0.4 {
-		return "uncertain"
-	}
-	return "ddi_unlikely"
-}
-
 func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
@@ -103,7 +93,7 @@ func main() {
 		}
 
 		// inference
-		prob, err := CallInference(ctx, inferenceURL, smilesA, smilesB)
+		prob, severity, err := CallInference(ctx, inferenceURL, smilesA, smilesB)
 		if err != nil {
 			http.Error(w, "inference error", 502)
 			return
@@ -115,8 +105,8 @@ func main() {
 			SmilesA:     smilesA,
 			SmilesB:     smilesB,
 			Probability: prob,
-			Label:       label(prob),
-			Model:       "ddi_pairmlp_scaffold_smiles_only",
+			Label:       severity,
+			Model:       "best_model",
 		})
 	})
 

@@ -67,3 +67,24 @@ class DDIModel:
         logits = self.model(feats)
         prob = torch.sigmoid(logits).item()
         return float(prob)
+    
+    @torch.no_grad()
+    def predict_with_severity(self, smiles_a: str, smiles_b: str) -> dict:
+        fp_a = self._fp_tensor(smiles_a)
+        fp_b = self._fp_tensor(smiles_b)
+        feats = build_pair_feats_from_two_fp(fp_a, fp_b)
+        logits = self.model(feats)
+        prob = torch.sigmoid(logits).item()
+        
+        # Determine severity based on model output
+        if prob >= 0.7:
+            severity = "major"
+        elif prob >= 0.4:
+            severity = "moderate"
+        else:
+            severity = "minor"
+            
+        return {
+            "probability": float(prob),
+            "severity": severity
+        }

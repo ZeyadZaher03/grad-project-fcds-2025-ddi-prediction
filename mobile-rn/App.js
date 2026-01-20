@@ -19,11 +19,7 @@ const Stack = createNativeStackNavigator();
 const API_BASE = 'http://134.209.165.83:8080'
 
 
-const probabilityLabel = (p) => {
-  if (p >= 0.7) return 'Likely Interaction';
-  if (p >= 0.4) return 'Uncertain Interaction';
-  return 'Unlikely Interaction';
-};
+
 
 function SearchScreen({ navigation }) {
   const route = useRoute();
@@ -140,7 +136,7 @@ function SearchScreen({ navigation }) {
     <SafeAreaView style={styles.screenContainer}>
       <View style={styles.screen}>
         <StatusBar style="dark" />
-        <Text style={styles.heading}>Drug Interaction Checker</Text>
+        <Text style={styles.heading}>Interscan</Text>
         <TextInput
           value={query}
           onChangeText={setQuery}
@@ -251,8 +247,8 @@ function ResultScreen({ route, navigation }) {
           />
         </View>
         <Animated.Text style={styles.progressLabel}>{score}%</Animated.Text>
-        <Text style={styles.progressDescription}>{probabilityLabel(probability)}</Text>
-        <Text style={styles.progressCaption}>Model label: {label.replace('ddi_', '').toUpperCase()}</Text>
+        <Text style={styles.progressDescription}>{label.charAt(0).toUpperCase() + label.slice(1)} Interaction</Text>
+        <Text style={styles.progressCaption}>Model: {result.model}</Text>
         </View>
         <Pressable onPress={handleReset} style={styles.backButton}>
         <Text style={styles.backButtonText}>Check another pair</Text>

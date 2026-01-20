@@ -11,7 +11,7 @@ class PredictReq(BaseModel):
     smilesA: str
     smilesB: str
 
-MODEL_PATH = os.getenv("MODEL_PATH", "/models/ddi_pairmlp_scaffold_smiles_only.pt")
+MODEL_PATH = os.getenv("MODEL_PATH", "/models/best_model.pt")
 DEVICE = os.getenv("DEVICE", "cpu")
 
 ddi = None
@@ -28,8 +28,8 @@ def health():
 @app.post("/predict")
 def predict(req: PredictReq):
     try:
-        prob = ddi.predict_smiles_pair(req.smilesA, req.smilesB)
-        return {"probability": prob}
+        result = ddi.predict_with_severity(req.smilesA, req.smilesB)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception:
