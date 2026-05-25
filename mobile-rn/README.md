@@ -30,4 +30,4 @@ React Native (Expo) client for drug interaction lookup. Users can search for dru
 
 ## Notes
 - When testing on a physical device, replace `http://localhost:8080` with your machine's LAN IP or an HTTPS tunnel URL.
-- The interaction label mirrors backend thresholds (`>=0.7` likely, `>=0.4` uncertain, else unlikely).
+- The interaction label mirrors backend severity thresholds (`>=0.7` major, `>=0.4` moderate, else minor).
