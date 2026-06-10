@@ -1,0 +1,8 @@
+# Pipeline data and outputs are large and regenerable — never commit them.
+data/raw/
+data/processed/
+artifacts/
+!data/.gitkeep
+!artifacts/.gitkeep
+__pycache__/
+*.pyc

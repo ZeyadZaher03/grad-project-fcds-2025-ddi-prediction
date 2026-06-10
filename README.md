@@ -4,8 +4,13 @@ Graduation project (FCDS 2025). A full-stack system that predicts the likelihood
 severity of an interaction between two drugs from their molecular structure.
 
 Enter two drug names → the names are resolved to SMILES via PubChem → a PyTorch model
-scores the pair → you get an interaction **probability** and a **severity** label
-(`minor` / `moderate` / `major`).
+scores the pair → you get an interaction **probability** and a learned **severity** class
+(`None` / `Minor` / `Moderate` / `Major`).
+
+The severity model is trained and evaluated reproducibly in [`ml/`](ml/README.md) on
+DDInter-labelled drug pairs, with drug-disjoint cold-start splits so the reported numbers
+reflect generalization to unseen drugs. See that README for the dataset, evaluation
+protocol, and results.
 
 ## Architecture
 
@@ -78,7 +83,8 @@ curl -X POST "http://localhost:8080/v1/ddi/predict" \
 # {
 #   "drugAName": "warfarin", "drugBName": "aspirin",
 #   "smilesA": "...", "smilesB": "...",
-#   "probability": 0.997, "label": "major", "model": "best_model"
+#   "interactionProbability": 0.83, "severity": "Major", "model": "severity_model",
+#   "probabilities": { "None": 0.17, "Minor": 0.06, "Moderate": 0.31, "Major": 0.46 }
 # }
 ```
 
@@ -96,28 +102,35 @@ curl http://localhost:8001/health   # { "ok": true }
 curl -X POST "http://localhost:8001/predict" \
   -H 'Content-Type: application/json' \
   -d '{"smilesA":"CC(=O)OC1=CC=CC=C1C(=O)O","smilesB":"CC(C)CC1=CC=C(C=C1)C(C)C(=O)O"}'
-# { "probability": 0.998, "severity": "major" }
+# {
+#   "interactionProbability": 0.71, "severity": "Moderate",
+#   "probabilities": { "None": 0.29, "Minor": 0.08, "Moderate": 0.40, "Major": 0.23 }
+# }
 ```
 
-Severity thresholds: `probability >= 0.7` → `major`, `>= 0.4` → `moderate`, else `minor`.
+`interactionProbability` is `1 − P(None)`; `severity` is `None` when an interaction is
+unlikely (`interactionProbability < 0.5`) and otherwise the most likely
+`Minor`/`Moderate`/`Major` class; `probabilities` is the full calibrated per-class
+distribution.
 
 ## The model
 
-The inference service loads a `PairMLP` checkpoint (`inference-py/app/models/`). Each
-molecule is converted to a Morgan fingerprint (RDKit), and the pair feature vector is
-`[fpA, fpB, |fpA − fpB|, fpA * fpB]`. The MLP outputs a single logit that is passed
-through a sigmoid to produce the interaction probability.
+The inference service loads a `PairMLP4` checkpoint — a 4-class classifier over a drug
+pair. Each molecule becomes a Morgan fingerprint (2048 bits, radius 2) plus 8 RDKit
+descriptors; the symmetric pair feature vector is `[vA + vB, |vA − vB|, vA * vB]`
+(length 6168). The model outputs four logits; a temperature (stored in the metadata)
+calibrates them before softmax. Severity is **learned**, not thresholded.
 
-The checkpoint stores `model_state_dict`, `fp_size`, and `in_dim`. Select which checkpoint
-to load with the `MODEL_PATH` environment variable (set in `docker-compose.yml`):
+The model and its serving metadata are produced by the `ml/` pipeline and copied into
+`inference-py/app/models/`. Paths are set in `docker-compose.yml`:
 
-- `ddi_pairmlp_scaffold_smiles_only.pt` — used by default in Compose.
-- `best_model.pt` — alternative checkpoint.
+| Env var      | Default                          | Description                                   |
+| ------------ | -------------------------------- | --------------------------------------------- |
+| `MODEL_PATH` | `/models/severity_model.pt`      | 4-class model checkpoint inside the container |
+| `META_PATH`  | `/models/severity_metadata.json` | Class order, feature config, temperature      |
+| `DEVICE`     | `cpu`                            | Torch device (`cpu` / `cuda`)                 |
 
-| Env var      | Default                 | Description                          |
-| ------------ | ----------------------- | ------------------------------------ |
-| `MODEL_PATH` | `/models/best_model.pt` | Path to the checkpoint inside the container |
-| `DEVICE`     | `cpu`                   | Torch device (`cpu` / `cuda`)        |
+To retrain or change the model, see [`ml/README.md`](ml/README.md) and re-export.
 
 The backend reads `INFERENCE_URL` (default `http://localhost:8001`) to locate the
 inference service.

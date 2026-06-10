@@ -1,0 +1,10 @@
+# ml/requirements.txt — documents the env; reuse /Users/zeyadzaher/grad-project/.venv which already has these.
+torch>=2.2
+torch_geometric>=2.5
+rdkit
+scikit-learn
+pandas
+pyarrow
+matplotlib
+pyyaml
+pytest

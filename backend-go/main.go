@@ -15,13 +15,14 @@ type DDIRequest struct {
 }
 
 type DDIResponse struct {
-	DrugAName   string  `json:"drugAName"`
-	DrugBName   string  `json:"drugBName"`
-	SmilesA     string  `json:"smilesA"`
-	SmilesB     string  `json:"smilesB"`
-	Probability float64 `json:"probability"`
-	Label       string  `json:"label"`
-	Model       string  `json:"model"`
+	DrugAName              string             `json:"drugAName"`
+	DrugBName              string             `json:"drugBName"`
+	SmilesA                string             `json:"smilesA"`
+	SmilesB                string             `json:"smilesB"`
+	InteractionProbability float64            `json:"interactionProbability"`
+	Severity               string             `json:"severity"`
+	Probabilities          map[string]float64 `json:"probabilities"`
+	Model                  string             `json:"model"`
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {
@@ -93,20 +94,21 @@ func main() {
 		}
 
 		// inference
-		prob, severity, err := CallInference(ctx, inferenceURL, smilesA, smilesB)
+		prob, severity, probabilities, err := CallInference(ctx, inferenceURL, smilesA, smilesB)
 		if err != nil {
 			http.Error(w, "inference error", 502)
 			return
 		}
 
 		writeJSON(w, 200, DDIResponse{
-			DrugAName:   req.DrugAName,
-			DrugBName:   req.DrugBName,
-			SmilesA:     smilesA,
-			SmilesB:     smilesB,
-			Probability: prob,
-			Label:       severity,
-			Model:       "best_model",
+			DrugAName:              req.DrugAName,
+			DrugBName:              req.DrugBName,
+			SmilesA:                smilesA,
+			SmilesB:                smilesB,
+			InteractionProbability: prob,
+			Severity:               severity,
+			Probabilities:          probabilities,
+			Model:                  "severity_model",
 		})
 	})
 
