@@ -6,7 +6,8 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - MODEL_PATH=/models/ddi_pairmlp_scaffold_smiles_only.pt
+      - MODEL_PATH=/models/severity_model.pt
+      - META_PATH=/models/severity_metadata.json
       - DEVICE=cpu
     volumes:
       - ./inference-py/app/models:/models:ro
