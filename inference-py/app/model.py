@@ -1,90 +1,79 @@
+# inference-py/app/model.py
+import json
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from rdkit import Chem
-from rdkit.Chem import AllChem, DataStructs
+from rdkit.Chem import AllChem, DataStructs, Descriptors, Crippen, rdMolDescriptors
 
-class PairMLP(nn.Module):
-    def __init__(self, in_dim, hidden_dim=512, dropout=0.3):
+CLASSES = ["None", "Minor", "Moderate", "Major"]
+SEVERITY_CLASSES = ["Minor", "Moderate", "Major"]
+
+_DESCRIPTORS = [
+    Descriptors.MolWt, Crippen.MolLogP, Descriptors.NumHDonors,
+    Descriptors.NumHAcceptors, Descriptors.TPSA, Descriptors.NumRotatableBonds,
+    rdMolDescriptors.CalcNumAromaticRings, rdMolDescriptors.CalcFractionCSP3,
+]
+
+
+class PairMLP4(nn.Module):
+    def __init__(self, in_dim, hidden=512, dropout=0.3):
         super().__init__()
-        self.fc1 = nn.Linear(in_dim, hidden_dim)
-        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
-        self.fc3 = nn.Linear(hidden_dim, 1)
-        self.dropout = dropout
+        self.net = nn.Sequential(
+            nn.Linear(in_dim, hidden), nn.ReLU(), nn.Dropout(dropout),
+            nn.Linear(hidden, hidden), nn.ReLU(), nn.Dropout(dropout),
+            nn.Linear(hidden, 4),
+        )
 
     def forward(self, x):
-        x = F.relu(self.fc1(x))
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = F.relu(self.fc2(x))
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.fc3(x).squeeze(-1)
-        return x
+        return self.net(x)
 
-def smiles_to_fp_np(smiles: str, n_bits: int):
-    mol = Chem.MolFromSmiles(smiles)
+
+def _drug_vector(smiles, fp_bits, radius):
+    mol = Chem.MolFromSmiles(str(smiles))
     if mol is None:
         raise ValueError(f"Invalid SMILES: {smiles}")
-    fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=n_bits)
-    arr = np.zeros((n_bits,), dtype=np.float32)
-    DataStructs.ConvertToNumpyArray(fp, arr)
-    return arr
+    fp = np.zeros((fp_bits,), dtype=np.float32)
+    bv = AllChem.GetMorganFingerprintAsBitVect(mol, radius, nBits=fp_bits)
+    DataStructs.ConvertToNumpyArray(bv, fp)
+    desc = np.zeros((len(_DESCRIPTORS),), dtype=np.float32)
+    for i, fn in enumerate(_DESCRIPTORS):
+        try:
+            desc[i] = float(fn(mol))
+        except Exception:
+            desc[i] = 0.0
+    return np.concatenate([fp, desc]).astype(np.float32)
 
-def build_pair_feats_from_two_fp(fpA: torch.Tensor, fpB: torch.Tensor) -> torch.Tensor:
-    fpA = fpA.unsqueeze(0)
-    fpB = fpB.unsqueeze(0)
-    abs_diff = torch.abs(fpA - fpB)
-    prod = fpA * fpB
-    return torch.cat([fpA, fpB, abs_diff, prod], dim=1)
+
+def _pair_features(va, vb):
+    return np.concatenate([va + vb, np.abs(va - vb), va * vb]).astype(np.float32)
 
 
 class DDIModel:
-    def __init__(self, model_path: str, device: str = "cpu"):
+    def __init__(self, model_path: str, metadata_path: str, device: str = "cpu"):
         self.device = torch.device(device)
-        ckpt = torch.load(model_path, map_location=self.device)
-        if "model_state_dict" not in ckpt:
-            raise ValueError("checkpoint missing model_state_dict")
-        self.fp_size = int(ckpt.get("fp_size", 0))
-        if self.fp_size <= 0:
-            raise ValueError("checkpoint missing fp_size")
-        in_dim = int(ckpt.get("in_dim", 0))
-        if in_dim <= 0:
-            raise ValueError("checkpoint missing in_dim")
-        self.model = PairMLP(in_dim=in_dim)
-        self.model.load_state_dict(ckpt["model_state_dict"])
-        self.model.to(self.device)
-        self.model.eval()
+        with open(metadata_path) as f:
+            self.meta = json.load(f)
+        self.fp_bits = int(self.meta["fp_bits"])
+        self.radius = int(self.meta["fp_radius"])
+        self.temperature = float(self.meta.get("temperature", 1.0))
+        ck = torch.load(model_path, map_location=self.device)
+        self.model = PairMLP4(in_dim=int(ck["in_dim"]), hidden=int(ck.get("hidden", 512)))
+        self.model.load_state_dict(ck["model_state_dict"])
+        self.model.to(self.device).eval()
 
-    def _fp_tensor(self, smiles: str) -> torch.Tensor:
-        arr = smiles_to_fp_np(smiles, n_bits=self.fp_size)
-        return torch.tensor(arr, dtype=torch.float32, device=self.device)
-
-    @torch.no_grad()
-    def predict_smiles_pair(self, smiles_a: str, smiles_b: str) -> float:
-        fp_a = self._fp_tensor(smiles_a)
-        fp_b = self._fp_tensor(smiles_b)
-        feats = build_pair_feats_from_two_fp(fp_a, fp_b)
-        logits = self.model(feats)
-        prob = torch.sigmoid(logits).item()
-        return float(prob)
-    
     @torch.no_grad()
     def predict_with_severity(self, smiles_a: str, smiles_b: str) -> dict:
-        fp_a = self._fp_tensor(smiles_a)
-        fp_b = self._fp_tensor(smiles_b)
-        feats = build_pair_feats_from_two_fp(fp_a, fp_b)
-        logits = self.model(feats)
-        prob = torch.sigmoid(logits).item()
-        
-        # Determine severity based on model output
-        if prob >= 0.7:
-            severity = "major"
-        elif prob >= 0.4:
-            severity = "moderate"
-        else:
-            severity = "minor"
-            
+        va = _drug_vector(smiles_a, self.fp_bits, self.radius)
+        vb = _drug_vector(smiles_b, self.fp_bits, self.radius)
+        feats = torch.tensor(_pair_features(va, vb), device=self.device).unsqueeze(0)
+        probs = F.softmax(self.model(feats) / self.temperature, dim=1).squeeze(0)
+        prob_map = {CLASSES[i]: float(probs[i]) for i in range(4)}
+        interaction = 1.0 - prob_map["None"]
+        sev_idx = int(torch.tensor([probs[CLASSES.index(c)] for c in SEVERITY_CLASSES]).argmax())
         return {
-            "probability": float(prob),
-            "severity": severity
+            "interactionProbability": interaction,
+            "severity": SEVERITY_CLASSES[sev_idx],
+            "probabilities": prob_map,
         }

@@ -1,0 +1,31 @@
+{
+  "classes": [
+    "None",
+    "Minor",
+    "Moderate",
+    "Major"
+  ],
+  "severity_classes": [
+    "Minor",
+    "Moderate",
+    "Major"
+  ],
+  "fp_bits": 2048,
+  "fp_radius": 2,
+  "descriptors": [
+    "MolWt",
+    "MolLogP",
+    "NumHDonors",
+    "NumHAcceptors",
+    "TPSA",
+    "NumRotatableBonds",
+    "NumAromaticRings",
+    "FractionCSP3"
+  ],
+  "temperature": 0.9612947702407837,
+  "in_dim": 6168,
+  "comparison": {
+    "gnn_s2_macro_f1": 0.16852608422375864,
+    "mlp_s2_macro_f1": 0.2968077367564308
+  }
+}
