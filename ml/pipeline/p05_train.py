@@ -79,7 +79,7 @@ def train_mlp(cfg, splits, X, idx, artifacts):
 
 def train_gnn(cfg, splits, X, idx, artifacts):
     set_seed(cfg["seed"])
-    x = torch.tensor(X)
+    x = torch.tensor(X, dtype=torch.float32)
     tr_pos = splits[(splits.split == "train") & (splits.label != "None")]
     ei = torch.tensor([[idx[a] for a in tr_pos.drugA_id] + [idx[b] for b in tr_pos.drugB_id],
                        [idx[b] for b in tr_pos.drugB_id] + [idx[a] for a in tr_pos.drugA_id]],
