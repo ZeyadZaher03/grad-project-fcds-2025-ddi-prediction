@@ -1,5 +1,5 @@
 # ml/config.py
-"""Load config.yaml into a plain dict with attribute-style access."""
+"""Load config.yaml into a plain dict (access keys with cfg["..."])."""
 from __future__ import annotations
 import os
 import yaml
