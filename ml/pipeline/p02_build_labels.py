@@ -3,6 +3,7 @@
 from __future__ import annotations
 import os
 import glob
+import warnings
 import numpy as np
 import pandas as pd
 from ml.common import normalize_name, LEVEL_MAP, set_seed
@@ -69,7 +70,7 @@ def sample_negatives(drug_ids, masked: set, n: int, hard_fraction: float,
 
     # Random negatives.
     tries = 0
-    while len([p for p in out]) < n_rand and tries < n_rand * 50:
+    while len(out) < n_rand and tries < n_rand * 50:
         p = rand_pair()
         if p and p not in out:
             out.add(p)
@@ -92,6 +93,12 @@ def sample_negatives(drug_ids, masked: set, n: int, hard_fraction: float,
                     break
             tries += 1
 
+    if len(out) < n:
+        warnings.warn(
+            f"sample_negatives: collected {len(out)}/{n} negatives; "
+            "negative pool may be too small relative to the mask.",
+            stacklevel=2,
+        )
     return list(out)[:n]
 
 
