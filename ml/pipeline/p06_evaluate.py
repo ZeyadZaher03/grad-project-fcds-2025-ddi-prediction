@@ -111,6 +111,8 @@ def main():
     tr = splits[splits.split == "train"]
     lr = LogisticRegression(max_iter=200, class_weight="balanced", multi_class="multinomial")
     lr.fit(mlp_feats(tr).numpy(), tr["y"].values)
+    # predict_proba columns are ordered by lr.classes_; downstream code indexes [:, 0..3].
+    assert list(lr.classes_) == [0, 1, 2, 3], f"unexpected logreg class order: {lr.classes_}"
 
     report = {"temperatures": {"mlp": T_mlp, "gnn": T_gnn}, "models": {}}
     for name in ["mlp", "gnn", "logreg", "majority"]:
