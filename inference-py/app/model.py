@@ -71,9 +71,17 @@ class DDIModel:
         probs = F.softmax(self.model(feats) / self.temperature, dim=1).squeeze(0)
         prob_map = {CLASSES[i]: float(probs[i]) for i in range(4)}
         interaction = 1.0 - prob_map["None"]
-        sev_idx = int(torch.tensor([probs[CLASSES.index(c)] for c in SEVERITY_CLASSES]).argmax())
+        # Keep severity consistent with the interaction decision: if an interaction is
+        # unlikely (interactionProbability < 0.5, i.e. None is the majority outcome),
+        # report "None"; otherwise report the most likely Minor/Moderate/Major class.
+        if interaction < 0.5:
+            severity = "None"
+        else:
+            sev_idx = int(torch.tensor([probs[CLASSES.index(c)]
+                                        for c in SEVERITY_CLASSES]).argmax())
+            severity = SEVERITY_CLASSES[sev_idx]
         return {
             "interactionProbability": interaction,
-            "severity": SEVERITY_CLASSES[sev_idx],
+            "severity": severity,
             "probabilities": prob_map,
         }

@@ -115,7 +115,8 @@ def train_gnn(cfg, splits, X, idx, artifacts):
                 break
     model.load_state_dict(best_state)
     torch.save({"model_state_dict": model.state_dict(), "in_channels": x.shape[1],
-                "kind": "gnn"}, os.path.join(artifacts, "model_gnn.pt"))
+                "hidden": cfg["train"]["gnn_hidden"], "kind": "gnn"},
+               os.path.join(artifacts, "model_gnn.pt"))
     json.dump(curve, open(os.path.join(artifacts, "curve_gnn.json"), "w"))
     print(f"[gnn] best val macro-F1={best_f1:.4f} over {len(curve)} epochs")
 
