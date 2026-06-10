@@ -15,11 +15,12 @@ type PredictReq struct {
 }
 
 type PredictResp struct {
-	Probability float64 `json:"probability"`
-	Severity    string  `json:"severity"`
+	InteractionProbability float64            `json:"interactionProbability"`
+	Severity               string             `json:"severity"`
+	Probabilities          map[string]float64 `json:"probabilities"`
 }
 
-func CallInference(ctx context.Context, inferenceURL string, smilesA, smilesB string) (float64, string, error) {
+func CallInference(ctx context.Context, inferenceURL string, smilesA, smilesB string) (float64, string, map[string]float64, error) {
 	body, _ := json.Marshal(PredictReq{SmilesA: smilesA, SmilesB: smilesB})
 
 	req, _ := http.NewRequestWithContext(ctx, "POST", inferenceURL+"/predict", bytes.NewReader(body))
@@ -28,17 +29,17 @@ func CallInference(ctx context.Context, inferenceURL string, smilesA, smilesB st
 	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return 0, "", err
+		return 0, "", nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return 0, "", fmt.Errorf("inference failed status=%d", resp.StatusCode)
+		return 0, "", nil, fmt.Errorf("inference failed status=%d", resp.StatusCode)
 	}
 
 	var out PredictResp
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return 0, "", err
+		return 0, "", nil, err
 	}
-	return out.Probability, out.Severity, nil
+	return out.InteractionProbability, out.Severity, out.Probabilities, nil
 }

@@ -198,17 +198,17 @@ function SearchScreen({ navigation }) {
 
 function ResultScreen({ route, navigation }) {
   const { result } = route.params;
-  const { drugAName, drugBName, probability, label, smilesA, smilesB } = result;
+  const { drugAName, drugBName, interactionProbability, severity, probabilities, smilesA, smilesB } = result;
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     progress.setValue(0);
     Animated.timing(progress, {
-      toValue: probability,
+      toValue: interactionProbability,
       duration: 900,
       useNativeDriver: false,
     }).start();
-  }, [probability, progress]);
+  }, [interactionProbability, progress]);
 
   const progressWidth = progress.interpolate({
     inputRange: [0, 1],
@@ -219,7 +219,7 @@ function ResultScreen({ route, navigation }) {
     outputRange: ['#10b981', '#facc15', '#fb923c', '#ef4444'],
   });
 
-  const score = useMemo(() => Math.round(probability * 1000) / 10, [probability]);
+  const score = useMemo(() => Math.round(interactionProbability * 1000) / 10, [interactionProbability]);
 
   const handleReset = () => {
     navigation.reset({
@@ -247,8 +247,18 @@ function ResultScreen({ route, navigation }) {
           />
         </View>
         <Animated.Text style={styles.progressLabel}>{score}%</Animated.Text>
-        <Text style={styles.progressDescription}>{label.charAt(0).toUpperCase() + label.slice(1)} Interaction</Text>
+        <Text style={styles.progressDescription}>{severity.charAt(0).toUpperCase() + severity.slice(1)} Interaction</Text>
         <Text style={styles.progressCaption}>Model: {result.model}</Text>
+        {probabilities && (
+          <View style={styles.probabilitiesContainer}>
+            {['None', 'Minor', 'Moderate', 'Major'].map((cls) => (
+              <View key={cls} style={styles.probabilityRow}>
+                <Text style={styles.probabilityLabel}>{cls}</Text>
+                <Text style={styles.probabilityValue}>{Math.round((probabilities[cls] ?? 0) * 1000) / 10}%</Text>
+              </View>
+            ))}
+          </View>
+        )}
         </View>
         <Pressable onPress={handleReset} style={styles.backButton}>
         <Text style={styles.backButtonText}>Check another pair</Text>
@@ -454,5 +464,25 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     fontWeight: '700',
     fontSize: 16,
+  },
+  probabilitiesContainer: {
+    marginTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+    paddingTop: 12,
+  },
+  probabilityRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 3,
+  },
+  probabilityLabel: {
+    color: '#94a3b8',
+    fontSize: 14,
+  },
+  probabilityValue: {
+    color: '#f8fafc',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
