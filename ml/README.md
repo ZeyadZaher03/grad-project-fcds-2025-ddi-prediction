@@ -61,4 +61,5 @@ bug. Future work: richer features (targets/enzymes/pathways), Minor-class resamp
 The deployed model is exported to `artifacts/export/{model.pt, metadata.json}` and copied into
 `inference-py/app/models/severity_{model.pt,metadata.json}`. The inference service loads it,
 applies temperature calibration, and returns `interactionProbability` (= 1 − P(None)),
-`severity` (argmax over Minor/Moderate/Major), and the full per-class `probabilities` map.
+`severity` (`None` when `interactionProbability < 0.5`, else the most likely
+Minor/Moderate/Major class), and the full per-class `probabilities` map.

@@ -247,7 +247,7 @@ function ResultScreen({ route, navigation }) {
           />
         </View>
         <Animated.Text style={styles.progressLabel}>{score}%</Animated.Text>
-        <Text style={styles.progressDescription}>{severity.charAt(0).toUpperCase() + severity.slice(1)} Interaction</Text>
+        <Text style={styles.progressDescription}>{severity === 'None' ? 'No significant interaction' : `${severity.charAt(0).toUpperCase() + severity.slice(1)} Interaction`}</Text>
         <Text style={styles.progressCaption}>Model: {result.model}</Text>
         {probabilities && (
           <View style={styles.probabilitiesContainer}>

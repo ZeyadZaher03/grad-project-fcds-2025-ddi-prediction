@@ -108,7 +108,7 @@ func main() {
 			InteractionProbability: prob,
 			Severity:               severity,
 			Probabilities:          probabilities,
-			Model:                  "best_model",
+			Model:                  "severity_model",
 		})
 	})
 
