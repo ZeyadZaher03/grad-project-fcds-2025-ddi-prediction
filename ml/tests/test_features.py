@@ -8,7 +8,12 @@ def test_drug_vector_shape_and_invalid_smiles():
     assert v.shape == (256 + 8,)              # fp + 8 descriptors
     z = drug_vector("not-a-smiles", fp_bits=256)
     assert z.shape == (256 + 8,)
-    assert np.all(z[:256] == 0)               # invalid -> zero fingerprint
+    assert np.all(z == 0)                     # invalid -> entire vector (fp + descriptors) zero
+
+
+def test_drug_vector_default_width():
+    v = drug_vector("CCO")
+    assert v.shape == (FP_BITS_DEFAULT + 8,)  # default fp width + 8 descriptors
 
 
 def test_pair_features_are_symmetric():

@@ -11,6 +11,7 @@ from ml.features import drug_vector
 def main():
     cfg = load_config()
     raw, proc = cfg["paths"]["raw_dir"], cfg["paths"]["processed_dir"]
+    os.makedirs(proc, exist_ok=True)
     fp_bits = cfg["features"]["fp_bits"]
     radius = cfg["features"]["fp_radius"]
 
