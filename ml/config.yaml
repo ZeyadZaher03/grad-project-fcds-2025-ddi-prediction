@@ -1,0 +1,37 @@
+# ml/config.yaml
+seed: 42
+
+paths:
+  drugs_csv: /Users/zeyadzaher/grad-project/data/drugs.csv
+  drugbank_edges_csv: "/Users/zeyadzaher/grad-project/learn /drug_interaction_edges.csv"
+  raw_dir: ml/data/raw
+  processed_dir: ml/data/processed
+  artifacts_dir: ml/artifacts
+
+ddinter:
+  base_url: https://ddinter.scbdd.com/static/media/download/ddinter_downloads_code_
+  categories: [A, B, D, H, L, P, R, V]
+
+features:
+  fp_radius: 2
+  fp_bits: 2048
+  descriptors: [MolWt, MolLogP, NumHDonors, NumHAcceptors, TPSA, NumRotatableBonds, NumAromaticRings, FractionCSP3]
+
+negatives:
+  ratio: 1.0
+  hard_fraction: 0.5
+
+split:
+  test_drug_frac: 0.20
+  val_frac: 0.10
+  s0_frac: 0.10
+
+train:
+  epochs: 100
+  patience: 10
+  lr: 0.001
+  weight_decay: 0.0001
+  dropout: 0.3
+  hidden: 512
+  batch_size: 512
+  gnn_hidden: 256
