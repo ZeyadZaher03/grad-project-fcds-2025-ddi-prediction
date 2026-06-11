@@ -47,3 +47,18 @@ class SageDDI(nn.Module):
         # Symmetric combination so predict(A,B) == predict(B,A).
         h = torch.cat([z[a] + z[b], torch.abs(z[a] - z[b])], dim=-1)
         return self.head(h)
+
+
+# --- appended in Task 7 ---
+class MLPHead(nn.Module):
+    """Generic 2-hidden-layer MLP. n_out=1 for binary (BCE), n_out=3 for severity."""
+    def __init__(self, in_dim: int, n_out: int, hidden: int = 512, dropout: float = 0.3):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(in_dim, hidden), nn.ReLU(), nn.Dropout(dropout),
+            nn.Linear(hidden, hidden), nn.ReLU(), nn.Dropout(dropout),
+            nn.Linear(hidden, n_out),
+        )
+
+    def forward(self, x):
+        return self.net(x)
