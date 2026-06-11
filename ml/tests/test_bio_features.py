@@ -8,6 +8,7 @@ def test_parse_entity_cell_splits_ids_and_handles_nan():
     assert parse_entity_cell("BE1 BE2 BE3") == {"BE1", "BE2", "BE3"}
     assert parse_entity_cell(float("nan")) == set()
     assert parse_entity_cell("") == set()
+    assert parse_entity_cell("nan") == set()   # defensive: string "nan" from CSV reads
 
 
 def test_bio_pair_features_symmetric_and_named():
