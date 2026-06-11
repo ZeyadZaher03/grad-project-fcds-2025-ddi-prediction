@@ -65,8 +65,12 @@ def main():
         if inter_mask.sum() > 0:
             ytrue_sev = np.array([SEV3_IDX[CLASSES[c]] for c in y4[inter_mask]])
             s2f1 = float(f1_score(ytrue_sev, sev[inter_mask].argmax(1), average="macro"))
-        four = combine_four_class(p_int, sev)
-        pred4 = four.argmax(1)
+        four = combine_four_class(p_int, sev)  # 4-class probabilities (for reporting)
+        # Predicted class uses the SAME decision rule as serving: gate on the interaction
+        # threshold, then take the most likely severity. (Soft argmax over `four` collapses
+        # to None whenever interactionProbability < ~0.6, which is not what we serve.)
+        threshold = cfg["features"].get("interaction_threshold", 0.5)
+        pred4 = np.where(p_int < threshold, 0, 1 + sev.argmax(1))
         per = {}
         P, R, Fc, _ = precision_recall_fscore_support(y4, pred4, labels=[0, 1, 2, 3], average=None, zero_division=0)
         for i in range(4):
