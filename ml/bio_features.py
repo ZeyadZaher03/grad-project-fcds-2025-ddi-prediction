@@ -19,7 +19,11 @@ def parse_entity_cell(cell) -> set:
     if cell is None or (isinstance(cell, float) and np.isnan(cell)):
         return set()
     s = str(cell).strip()
-    return set(s.split()) if s else set()
+    # Defensive: some CSV-read settings surface missing values as the literal string
+    # "nan" rather than a float NaN. No real DrugBank entity ID is "nan".
+    if not s or s.lower() == "nan":
+        return set()
+    return set(s.split())
 
 
 def empty_bio_sets() -> dict:
