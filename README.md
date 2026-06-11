@@ -115,22 +115,24 @@ distribution.
 
 ## The model
 
-The inference service loads a `PairMLP4` checkpoint — a 4-class classifier over a drug
-pair. Each molecule becomes a Morgan fingerprint (2048 bits, radius 2) plus 8 RDKit
-descriptors; the symmetric pair feature vector is `[vA + vB, |vA − vB|, vA * vB]`
-(length 6168). The model outputs four logits; a temperature (stored in the metadata)
-calibrates them before softmax. Severity is **learned**, not thresholded.
+The inference service serves a **two-stage** model (see [`ml/README.md`](ml/README.md) for the
+full design and ablation). Stage 1 predicts whether the two drugs interact; stage 2 grades the
+severity. Each molecule is embedded with **ChemBERTa** (`DeepChem/ChemBERTa-77M-MLM`), combined
+into a symmetric pair vector `[vA + vB, |vA − vB|, vA * vB]` plus biological mechanistic-overlap
+features (shared targets/enzymes/transporters/carriers). `interactionProbability` is stage 1's
+score; `severity` is `None` below the 0.5 threshold, else the most likely stage-2 class.
+Severity is **learned**, not thresholded from the probability.
 
-The model and its serving metadata are produced by the `ml/` pipeline and copied into
-`inference-py/app/models/`. Paths are set in `docker-compose.yml`:
+The two-stage models, metadata, and a SMILES→biology lookup are produced by the `ml/` pipeline
+and copied into `inference-py/app/models/`. Paths are set in `docker-compose.yml`:
 
-| Env var      | Default                          | Description                                   |
-| ------------ | -------------------------------- | --------------------------------------------- |
-| `MODEL_PATH` | `/models/severity_model.pt`      | 4-class model checkpoint inside the container |
-| `META_PATH`  | `/models/severity_metadata.json` | Class order, feature config, temperature      |
-| `DEVICE`     | `cpu`                            | Torch device (`cpu` / `cuda`)                 |
+| Env var      | Default    | Description                                                                     |
+| ------------ | ---------- | ------------------------------------------------------------------------------- |
+| `MODELS_DIR` | `/models`  | Directory holding `stage1.pt`, `stage2.pt`, `severity_metadata.json`, `bio_lookup.json` |
+| `DEVICE`     | `cpu`      | Torch device (`cpu` / `cuda`)                                                   |
 
-To retrain or change the model, see [`ml/README.md`](ml/README.md) and re-export.
+To retrain or change the model, see [`ml/README.md`](ml/README.md) and re-export. The inference
+image installs `transformers` and pre-downloads ChemBERTa at build time.
 
 The backend reads `INFERENCE_URL` (default `http://localhost:8001`) to locate the
 inference service.
