@@ -21,3 +21,14 @@ def test_pair_features_symmetric_on_light_vectors():
     a = light_drug_vector("CCO", fp_bits=256)
     b = light_drug_vector("CCN", fp_bits=256)
     assert np.allclose(pair_features(a, b), pair_features(b, a))
+
+
+import pytest
+from ml.embeddings import chemberta_available, embed_smiles
+
+
+@pytest.mark.skipif(not chemberta_available(), reason="transformers not installed")
+def test_chemberta_embedding_shape():
+    import numpy as np
+    v = embed_smiles("CCO")
+    assert v.ndim == 1 and v.shape[0] > 0 and np.all(np.isfinite(v))
