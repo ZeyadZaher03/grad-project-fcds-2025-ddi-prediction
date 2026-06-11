@@ -6,3 +6,4 @@ rdkit-pypi==2022.9.5
 pydantic==2.6.4
 pandas==2.2.0
 scikit-learn==1.4.0
+transformers==4.44.2

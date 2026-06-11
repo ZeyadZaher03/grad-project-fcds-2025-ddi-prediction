@@ -6,8 +6,7 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - MODEL_PATH=/models/severity_model.pt
-      - META_PATH=/models/severity_metadata.json
+      - MODELS_DIR=/models
       - DEVICE=cpu
     volumes:
       - ./inference-py/app/models:/models:ro

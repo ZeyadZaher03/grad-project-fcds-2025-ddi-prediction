@@ -16,6 +16,16 @@ features:
   fp_radius: 2
   fp_bits: 2048
   descriptors: [MolWt, MolLogP, NumHDonors, NumHAcceptors, TPSA, NumRotatableBonds, NumAromaticRings, FractionCSP3]
+  light_fp_bits: 1024
+  structural: chemberta   # ablation winner: S2 macro-F1 0.485 vs 0.277 (light) / 0.297 (iter-1)
+  use_bio: true
+
+bio:
+  merged_csv: /Users/zeyadzaher/grad-project/merged_output.csv
+
+stage1:
+  max_pairs: 120000
+  neg_ratio: 1.0
 
 negatives:
   ratio: 1.0

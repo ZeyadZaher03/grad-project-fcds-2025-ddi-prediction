@@ -4,6 +4,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN python -c "from transformers import AutoTokenizer, AutoModel; AutoModel.from_pretrained('DeepChem/ChemBERTa-77M-MLM'); AutoTokenizer.from_pretrained('DeepChem/ChemBERTa-77M-MLM')"
+
 COPY app ./app
 
 EXPOSE 8001
