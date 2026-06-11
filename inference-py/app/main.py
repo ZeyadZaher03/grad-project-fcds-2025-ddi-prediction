@@ -2,7 +2,7 @@
 import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from .model import DDIModel
+from .model import TwoStageDDIModel
 
 app = FastAPI(title="DDI Inference Service")
 
@@ -12,17 +12,21 @@ class PredictReq(BaseModel):
     smilesB: str
 
 
-MODEL_PATH = os.getenv("MODEL_PATH", "/models/severity_model.pt")
-META_PATH = os.getenv("META_PATH", "/models/severity_metadata.json")
+MODELS_DIR = os.getenv("MODELS_DIR", "/models")
 DEVICE = os.getenv("DEVICE", "cpu")
-
 ddi = None
 
 
 @app.on_event("startup")
 def startup():
     global ddi
-    ddi = DDIModel(MODEL_PATH, META_PATH, device=DEVICE)
+    ddi = TwoStageDDIModel(
+        os.path.join(MODELS_DIR, "stage1.pt"),
+        os.path.join(MODELS_DIR, "stage2.pt"),
+        os.path.join(MODELS_DIR, "severity_metadata.json"),
+        os.path.join(MODELS_DIR, "bio_lookup.json"),
+        device=DEVICE,
+    )
 
 
 @app.get("/health")
